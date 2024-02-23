@@ -151,4 +151,33 @@ class TestOutputFirefox < Minitest::Test
     markers = JSON.parse(output)["threads"].flat_map { _1["markers"]["data"] }
     assert_includes markers, {"type"=>"UserTiming", "entryType"=>"measure", "name"=>"custom"}
   end
+
+
+  def test_thread_names
+    current_name = Thread.current.name
+    unnamed_id = nil
+    result = Vernier.trace do
+      Thread.current.name="main"
+      th1 = Thread.new { sleep 0.01 }
+      unnamed_id = th1.object_id
+      th1.join
+    end
+
+    output = Vernier::Output::Firefox.new(result).output
+
+    assert_valid_firefox_profile(output)
+
+    data = JSON.parse(output)
+    threads = data["threads"]
+    threads.each do |tr|
+      if tr["isMainThread"]
+        assert_equal "main", tr["name"]
+      else
+        assert_equal "UNNAMED [#{unnamed_id}]", tr["name"]
+      end
+    end
+
+  ensure
+    Thread.current.name = current_name
+  end
 end

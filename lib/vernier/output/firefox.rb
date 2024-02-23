@@ -165,6 +165,15 @@ module Vernier
           @tid = tid
           @name = name
 
+          if @name == ""
+            tr = ObjectSpace._id2ref(@ruby_thread_id)
+            if tr && tr.name && !tr.name.empty?
+              @name = tr.name
+            else
+              @name = "UNNAMED [#{@ruby_thread_id}]"
+            end
+          end
+
           timestamps ||= [0] * samples.size
           @samples, @weights, @timestamps = samples, weights, timestamps
           @sample_categories = sample_categories || ([0] * samples.size)
